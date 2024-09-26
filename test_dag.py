@@ -40,7 +40,7 @@ with DAG('test_cluster_dag', default_args=default_args, schedule_interval=None, 
                 'cpu': '8'
             }
         },
-        timeout=300,
+        execution_timeout=timedelta(seconds=300),
     )
 
     gpu_task_1 = KubernetesPodOperator(
@@ -55,7 +55,7 @@ with DAG('test_cluster_dag', default_args=default_args, schedule_interval=None, 
                 'nvidia.com/gpu': '1'
             }
         },
-        timeout=300,
+        execution_timeout=timedelta(seconds=300),
     )
 
     gpu_task_2 = KubernetesPodOperator(
@@ -70,7 +70,7 @@ with DAG('test_cluster_dag', default_args=default_args, schedule_interval=None, 
                 'nvidia.com/gpu': '1'
             }
         },
-        timeout=300,
+        execution_timeout=timedelta(seconds=300),
     )
 
     cpu_check_task = PythonOperator(
