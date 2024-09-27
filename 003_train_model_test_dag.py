@@ -1,3 +1,7 @@
+# 
+# 003 Train model on AirFlow
+# 
+
 from airflow import DAG
 import logging
 from airflow.operators.bash import BashOperator
@@ -40,7 +44,7 @@ with DAG(
     default_args=default_args,
     description='A DAG to train a simple model on CPU',
     schedule_interval=None,
-    start_date=datetime(2023, 1, 1),
+    start_date=datetime(2024, 1, 1),
     catchup=False,
 ) as dag:
 
