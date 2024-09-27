@@ -24,11 +24,11 @@ volume_mount = k8s.V1VolumeMount(
 )
 
 with DAG(
-    'hf_transformers_training_dag',
+    'hf_transformers_training_dag_with_logging',
     default_args=default_args,
     schedule_interval=None,
     catchup=False,
-    description='DAG для обучения модели на Yelp Reviews с использованием Hugging Face и PyTorch',
+    description='DAG для обучения модели на Yelp Reviews с расширенным логированием',
 ) as dag:
 
     prepare_dataset = KubernetesPodOperator(
@@ -39,18 +39,26 @@ with DAG(
         cmds=["bash", "-c"],
         arguments=[
             """
-            pip install datasets &&
+            set -e  # Останавливает выполнение при ошибке
+            echo "Starting dataset preparation..."
+            pip install --no-cache-dir datasets
+            echo "Datasets library installed successfully."
             python -c "
 import os
 from datasets import load_dataset
 
-# Загрузка датасета
-dataset = load_dataset('yelp_review_full')
-
-# Сохранение датасета в общий volume
-dataset.save_to_disk('/shared-data/dataset')
-print('Dataset prepared and saved.')
+try:
+    print('Loading Yelp Reviews dataset...')
+    dataset = load_dataset('yelp_review_full')
+    print('Dataset loaded successfully.')
+    print('Saving dataset to /shared-data/dataset...')
+    dataset.save_to_disk('/shared-data/dataset')
+    print('Dataset saved successfully.')
+except Exception as e:
+    print(f'Error during dataset preparation: {e}')
+    exit(1)
             "
+            echo "Dataset preparation completed."
             """
         ],
         volumes=[shared_volume],
@@ -61,6 +69,7 @@ print('Dataset prepared and saved.')
             limits={'memory': '8Gi', 'cpu': '4'}
         ),
         execution_timeout=timedelta(minutes=30),
+        get_logs=True,  # Убедитесь, что логи собираются
     )
 
     tokenize_dataset = KubernetesPodOperator(
@@ -71,29 +80,39 @@ print('Dataset prepared and saved.')
         cmds=["bash", "-c"],
         arguments=[
             """
-            pip install datasets transformers &&
+            set -e
+            echo "Starting dataset tokenization..."
+            pip install --no-cache-dir datasets transformers
+            echo "Datasets and Transformers libraries installed successfully."
             python -c "
 import os
 from datasets import load_from_disk
 from transformers import AutoTokenizer
 
-# Загрузка датасета
-dataset = load_from_disk('/shared-data/dataset')
-
-# Загрузка токенизатора
-tokenizer = AutoTokenizer.from_pretrained('google-bert/bert-base-cased')
-
-# Функция токенизации
-def tokenize_function(examples):
-    return tokenizer(examples['text'], padding='max_length', truncation=True)
-
-# Применение токенизации
-tokenized_datasets = dataset.map(tokenize_function, batched=True)
-
-# Сохранение токенизированного датасета
-tokenized_datasets.save_to_disk('/shared-data/tokenized_dataset')
-print('Dataset tokenized and saved.')
+try:
+    print('Loading prepared dataset...')
+    dataset = load_from_disk('/shared-data/dataset')
+    print('Dataset loaded successfully.')
+    
+    print('Loading tokenizer...')
+    tokenizer = AutoTokenizer.from_pretrained('google-bert/bert-base-cased')
+    print('Tokenizer loaded successfully.')
+    
+    def tokenize_function(examples):
+        return tokenizer(examples['text'], padding='max_length', truncation=True)
+    
+    print('Tokenizing dataset...')
+    tokenized_datasets = dataset.map(tokenize_function, batched=True)
+    print('Dataset tokenized successfully.')
+    
+    print('Saving tokenized dataset...')
+    tokenized_datasets.save_to_disk('/shared-data/tokenized_dataset')
+    print('Tokenized dataset saved successfully.')
+except Exception as e:
+    print(f'Error during tokenization: {e}')
+    exit(1)
             "
+            echo "Dataset tokenization completed."
             """
         ],
         volumes=[shared_volume],
@@ -104,6 +123,7 @@ print('Dataset tokenized and saved.')
             limits={'memory': '16Gi', 'cpu': '8'}
         ),
         execution_timeout=timedelta(minutes=60),
+        get_logs=True,
     )
 
     create_subsets = KubernetesPodOperator(
@@ -114,23 +134,33 @@ print('Dataset tokenized and saved.')
         cmds=["bash", "-c"],
         arguments=[
             """
-            pip install datasets &&
+            set -e
+            echo "Starting subset creation..."
+            pip install --no-cache-dir datasets
+            echo "Datasets library installed successfully."
             python -c "
 import os
 from datasets import load_from_disk
 
-# Загрузка токенизированного датасета
-tokenized_datasets = load_from_disk('/shared-data/tokenized_dataset')
-
-# Создание подмножеств
-small_train_dataset = tokenized_datasets['train'].shuffle(seed=42).select(range(1000))
-small_eval_dataset = tokenized_datasets['test'].shuffle(seed=42).select(range(1000))
-
-# Сохранение подмножеств
-small_train_dataset.save_to_disk('/shared-data/small_train_dataset')
-small_eval_dataset.save_to_disk('/shared-data/small_eval_dataset')
-print('Subsets created and saved.')
+try:
+    print('Loading tokenized dataset...')
+    tokenized_datasets = load_from_disk('/shared-data/tokenized_dataset')
+    print('Tokenized dataset loaded successfully.')
+    
+    print('Creating small train and eval subsets...')
+    small_train_dataset = tokenized_datasets['train'].shuffle(seed=42).select(range(1000))
+    small_eval_dataset = tokenized_datasets['test'].shuffle(seed=42).select(range(1000))
+    print('Subsets created successfully.')
+    
+    print('Saving subsets...')
+    small_train_dataset.save_to_disk('/shared-data/small_train_dataset')
+    small_eval_dataset.save_to_disk('/shared-data/small_eval_dataset')
+    print('Subsets saved successfully.')
+except Exception as e:
+    print(f'Error during subset creation: {e}')
+    exit(1)
             "
+            echo "Subset creation completed."
             """
         ],
         volumes=[shared_volume],
@@ -141,6 +171,7 @@ print('Subsets created and saved.')
             limits={'memory': '8Gi', 'cpu': '4'}
         ),
         execution_timeout=timedelta(minutes=30),
+        get_logs=True,
     )
 
     train_model = KubernetesPodOperator(
@@ -151,7 +182,10 @@ print('Subsets created and saved.')
         cmds=["bash", "-c"],
         arguments=[
             """
-            pip install datasets transformers torch evaluate &&
+            set -e
+            echo "Starting model training..."
+            pip install --no-cache-dir datasets transformers torch evaluate
+            echo "Datasets, Transformers, Torch, and Evaluate libraries installed successfully."
             python -c "
 import os
 from datasets import load_from_disk
@@ -159,51 +193,62 @@ from transformers import AutoModelForSequenceClassification, TrainingArguments, 
 import evaluate
 import numpy as np
 
-# Загрузка подмножеств
-train_dataset = load_from_disk('/shared-data/small_train_dataset')
-eval_dataset = load_from_disk('/shared-data/small_eval_dataset')
-
-# Загрузка модели
-model = AutoModelForSequenceClassification.from_pretrained('google-bert/bert-base-cased', num_labels=5)
-
-# Настройка аргументов обучения
-training_args = TrainingArguments(
-    output_dir='/shared-data/test_trainer',
-    evaluation_strategy='epoch',
-    per_device_train_batch_size=8,
-    per_device_eval_batch_size=8,
-    num_train_epochs=3,
-    weight_decay=0.01,
-)
-
-# Загрузка метрики
-metric = evaluate.load('accuracy')
-
-# Функция вычисления метрик
-def compute_metrics(eval_pred):
-    logits, labels = eval_pred
-    predictions = np.argmax(logits, axis=-1)
-    return metric.compute(predictions=predictions, references=labels)
-
-# Инициализация Trainer
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=train_dataset,
-    eval_dataset=eval_dataset,
-    compute_metrics=compute_metrics,
-)
-
-# Обучение модели
-trainer.train()
-
-# Сохранение модели
-trainer.save_model('/shared-data/fine_tuned_model')
-
-# Оценка модели
-results = trainer.evaluate()
-print('Evaluation Results:', results)
+try:
+    print('Loading training and evaluation datasets...')
+    train_dataset = load_from_disk('/shared-data/small_train_dataset')
+    eval_dataset = load_from_disk('/shared-data/small_eval_dataset')
+    print('Datasets loaded successfully.')
+    
+    print('Loading pretrained model...')
+    model = AutoModelForSequenceClassification.from_pretrained('google-bert/bert-base-cased', num_labels=5)
+    print('Model loaded successfully.')
+    
+    print('Setting up training arguments...')
+    training_args = TrainingArguments(
+        output_dir='/shared-data/test_trainer',
+        evaluation_strategy='epoch',
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=8,
+        num_train_epochs=3,
+        weight_decay=0.01,
+    )
+    print('Training arguments set successfully.')
+    
+    print('Loading evaluation metric...')
+    metric = evaluate.load('accuracy')
+    print('Evaluation metric loaded successfully.')
+    
+    def compute_metrics(eval_pred):
+        logits, labels = eval_pred
+        predictions = np.argmax(logits, axis=-1)
+        return metric.compute(predictions=predictions, references=labels)
+    
+    print('Initializing Trainer...')
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        compute_metrics=compute_metrics,
+    )
+    print('Trainer initialized successfully.')
+    
+    print('Starting training...')
+    trainer.train()
+    print('Training completed successfully.')
+    
+    print('Saving fine-tuned model...')
+    trainer.save_model('/shared-data/fine_tuned_model')
+    print('Model saved successfully.')
+    
+    print('Starting evaluation...')
+    results = trainer.evaluate()
+    print('Evaluation Results:', results)
+except Exception as e:
+    print(f'Error during model training: {e}')
+    exit(1)
             "
+            echo "Model training completed."
             """
         ],
         volumes=[shared_volume],
@@ -214,6 +259,7 @@ print('Evaluation Results:', results)
             limits={'memory': '64Gi', 'cpu': '32', 'nvidia.com/gpu': '1'}
         ),
         execution_timeout=timedelta(hours=2),
+        get_logs=True,
     )
 
     evaluate_model = KubernetesPodOperator(
@@ -224,7 +270,10 @@ print('Evaluation Results:', results)
         cmds=["bash", "-c"],
         arguments=[
             """
-            pip install transformers datasets torch evaluate &&
+            set -e
+            echo "Starting model evaluation..."
+            pip install --no-cache-dir transformers datasets torch evaluate
+            echo "Transformers, Datasets, Torch, and Evaluate libraries installed successfully."
             python -c "
 import os
 from transformers import AutoModelForSequenceClassification, Trainer
@@ -232,26 +281,33 @@ from datasets import load_from_disk
 import evaluate
 import numpy as np
 
-# Загрузка модели и подмножеств
-model = AutoModelForSequenceClassification.from_pretrained('/shared-data/fine_tuned_model')
-eval_dataset = load_from_disk('/shared-data/small_eval_dataset')
-
-# Настройка Trainer
-trainer = Trainer(
-    model=model,
-    eval_dataset=eval_dataset,
-    compute_metrics=lambda eval_pred: {
-        'accuracy': evaluate.load('accuracy').compute(
-            predictions=np.argmax(eval_pred[0], axis=-1),
-            references=eval_pred[1]
-        )['accuracy']
-    },
-)
-
-# Оценка модели
-results = trainer.evaluate()
-print('Final Evaluation Results:', results)
+try:
+    print('Loading fine-tuned model and evaluation dataset...')
+    model = AutoModelForSequenceClassification.from_pretrained('/shared-data/fine_tuned_model')
+    eval_dataset = load_from_disk('/shared-data/small_eval_dataset')
+    print('Model and dataset loaded successfully.')
+    
+    print('Setting up Trainer for evaluation...')
+    trainer = Trainer(
+        model=model,
+        eval_dataset=eval_dataset,
+        compute_metrics=lambda eval_pred: {
+            'accuracy': evaluate.load('accuracy').compute(
+                predictions=np.argmax(eval_pred[0], axis=-1),
+                references=eval_pred[1]
+            )['accuracy']
+        },
+    )
+    print('Trainer set up successfully.')
+    
+    print('Starting evaluation...')
+    results = trainer.evaluate()
+    print('Final Evaluation Results:', results)
+except Exception as e:
+    print(f'Error during model evaluation: {e}')
+    exit(1)
             "
+            echo "Model evaluation completed."
             """
         ],
         volumes=[shared_volume],
@@ -262,6 +318,7 @@ print('Final Evaluation Results:', results)
             limits={'memory': '32Gi', 'cpu': '16', 'nvidia.com/gpu': '1'}
         ),
         execution_timeout=timedelta(hours=1),
+        get_logs=True,
     )
 
     # Опциональный шаг: Native PyTorch Training Loop
@@ -273,7 +330,10 @@ print('Final Evaluation Results:', results)
         cmds=["bash", "-c"],
         arguments=[
             """
-            pip install transformers datasets torch evaluate tqdm &&
+            set -e
+            echo "Starting native PyTorch training loop..."
+            pip install --no-cache-dir transformers datasets torch evaluate tqdm
+            echo "Transformers, Datasets, Torch, Evaluate, and TQDM libraries installed successfully."
             python -c "
 import os
 from datasets import load_from_disk
@@ -286,62 +346,73 @@ from tqdm.auto import tqdm
 import evaluate
 import numpy as np
 
-# Загрузка подмножеств
-train_dataset = load_from_disk('/shared-data/small_train_dataset')
-eval_dataset = load_from_disk('/shared-data/small_eval_dataset')
-
-# Создание DataLoader
-train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=8)
-eval_dataloader = DataLoader(eval_dataset, batch_size=8)
-
-# Загрузка модели
-model = AutoModelForSequenceClassification.from_pretrained('google-bert/bert-base-cased', num_labels=5)
-
-# Настройка устройства
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-model.to(device)
-
-# Настройка оптимизатора и планировщика
-optimizer = AdamW(model.parameters(), lr=5e-5)
-num_epochs = 3
-num_training_steps = num_epochs * len(train_dataloader)
-lr_scheduler = get_scheduler(
-    name='linear', optimizer=optimizer, num_warmup_steps=0, num_training_steps=num_training_steps
-)
-
-# Настройка метрики
-metric = evaluate.load('accuracy')
-
-# Цикл обучения
-progress_bar = tqdm(range(num_training_steps))
-model.train()
-for epoch in range(num_epochs):
-    for batch in train_dataloader:
+try:
+    print('Loading training and evaluation datasets...')
+    train_dataset = load_from_disk('/shared-data/small_train_dataset')
+    eval_dataset = load_from_disk('/shared-data/small_eval_dataset')
+    print('Datasets loaded successfully.')
+    
+    print('Creating DataLoaders...')
+    train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=8)
+    eval_dataloader = DataLoader(eval_dataset, batch_size=8)
+    print('DataLoaders created successfully.')
+    
+    print('Loading pretrained model...')
+    model = AutoModelForSequenceClassification.from_pretrained('google-bert/bert-base-cased', num_labels=5)
+    print('Model loaded successfully.')
+    
+    print('Setting device...')
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    model.to(device)
+    print(f'Using device: {device}')
+    
+    print('Setting up optimizer and scheduler...')
+    optimizer = AdamW(model.parameters(), lr=5e-5)
+    num_epochs = 3
+    num_training_steps = num_epochs * len(train_dataloader)
+    lr_scheduler = get_scheduler(
+        name='linear', optimizer=optimizer, num_warmup_steps=0, num_training_steps=num_training_steps
+    )
+    print('Optimizer and scheduler set up successfully.')
+    
+    print('Loading evaluation metric...')
+    metric = evaluate.load('accuracy')
+    print('Evaluation metric loaded successfully.')
+    
+    print('Starting training loop...')
+    progress_bar = tqdm(range(num_training_steps))
+    model.train()
+    for epoch in range(num_epochs):
+        print(f'Starting epoch {epoch + 1}/{num_epochs}...')
+        for batch in train_dataloader:
+            batch = {k: v.to(device) for k, v in batch.items()}
+            outputs = model(**batch)
+            loss = outputs.loss
+            loss.backward()
+    
+            optimizer.step()
+            lr_scheduler.step()
+            optimizer.zero_grad()
+            progress_bar.update(1)
+    print('Training loop completed successfully.')
+    
+    print('Starting evaluation loop...')
+    model.eval()
+    for batch in eval_dataloader:
         batch = {k: v.to(device) for k, v in batch.items()}
-        outputs = model(**batch)
-        loss = outputs.loss
-        loss.backward()
-
-        optimizer.step()
-        lr_scheduler.step()
-        optimizer.zero_grad()
-        progress_bar.update(1)
-
-# Цикл оценки
-model.eval()
-for batch in eval_dataloader:
-    batch = {k: v.to(device) for k, v in batch.items()}
-    with torch.no_grad():
-        outputs = model(**batch)
-
-    logits = outputs.logits
-    predictions = torch.argmax(logits, dim=-1)
-    metric.add_batch(predictions=predictions, references=batch['labels'])
-
-# Вывод результатов оценки
-results = metric.compute()
-print('Native PyTorch Evaluation Results:', results)
+        with torch.no_grad():
+            outputs = model(**batch)
+    
+        logits = outputs.logits
+        predictions = torch.argmax(logits, dim=-1)
+        metric.add_batch(predictions=predictions, references=batch['labels'])
+    results = metric.compute()
+    print('Native PyTorch Evaluation Results:', results)
+except Exception as e:
+    print(f'Error during native PyTorch training: {e}')
+    exit(1)
             "
+            echo "Native PyTorch training loop completed."
             """
         ],
         volumes=[shared_volume],
@@ -352,6 +423,7 @@ print('Native PyTorch Evaluation Results:', results)
             limits={'memory': '64Gi', 'cpu': '32', 'nvidia.com/gpu': '1'}
         ),
         execution_timeout=timedelta(hours=3),
+        get_logs=True,
     )
 
     # Определение зависимостей между задачами
