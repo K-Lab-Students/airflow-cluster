@@ -6,9 +6,9 @@ from datetime import datetime, timedelta
 # Функция для тестирования установленной зависимости
 def test_dependency():
     try:
-        # Пример: импорт библиотеки для проверки установки
-        import requests
-        response = requests.get("https://www.example.com")
+        from datasets import load_dataset
+        dataset = load_dataset("yelp_review_full")
+        dataset["train"][100]
         print("Dependency 'requests' installed successfully and working!")
     except ImportError as e:
         print(f"Dependency not installed: {e}")
@@ -32,7 +32,7 @@ with DAG(
     # Задача установки зависимостей с помощью pip
     install_dependencies = BashOperator(
         task_id='install_dependencies',
-        bash_command='pip install requests',  # Замените 'requests' на ваши зависимости
+        bash_command='pip install datasets',  # Замените 'requests' на ваши зависимости
     )
 
     # Задача тестирования установленных зависимостей
