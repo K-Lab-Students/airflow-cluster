@@ -1,5 +1,5 @@
 # 
-# 001 Install Deps for Python [task 1] and Test download Dataset and store to AirFlow Datasets [task 2]
+# 001 Install Deps for Python [task 1] and Test download Dataset [task 2]
 # 
 
 from airflow import DAG
@@ -33,7 +33,7 @@ default_args = {
 with DAG(
     dag_id='download_hugging_face_dataset',
     default_args=default_args,
-    description='A DAG to install dataset dependencies and download the dataset from HuggingFace and store to AirFlow Datasets',
+    description='A DAG to install dataset dependencies and download the dataset from HuggingFace',
     schedule_interval=None,  # Выполняется по вызову
     start_date=datetime(2024, 1, 1),
     catchup=False,
