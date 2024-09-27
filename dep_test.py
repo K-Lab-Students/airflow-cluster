@@ -1,16 +1,22 @@
 from airflow import DAG
+import logging
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 # Функция для тестирования установленной зависимости
 def test_dependency():
     try:
         from datasets import load_dataset
         dataset = load_dataset("yelp_review_full")
-        dataset["train"][100]
+        store = dataset["train"][100]
+        logger.info(f"{store}")
+        logger.info("Dependency 'requests' installed successfully and working!")
         print("Dependency 'requests' installed successfully and working!")
     except ImportError as e:
+        logger.info(f"Dependency not installed: {e}")
         print(f"Dependency not installed: {e}")
 
 # Определение DAG
