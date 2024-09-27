@@ -1,3 +1,7 @@
+# 
+# 001 Install Deps for Python [task 1] and Test download Dataset and store to AirFlow Datasets [task 2]
+# 
+
 from airflow import DAG
 import logging
 from airflow.operators.bash import BashOperator
@@ -27,18 +31,18 @@ default_args = {
 }
 
 with DAG(
-    dag_id='install_and_test_dependencies',
+    dag_id='download_hugging_face_dataset',
     default_args=default_args,
-    description='A DAG to install dependencies and test them',
+    description='A DAG to install dataset dependencies and download the dataset from HuggingFace and store to AirFlow Datasets',
     schedule_interval=None,  # Выполняется по вызову
-    start_date=datetime(2023, 1, 1),
+    start_date=datetime(2024, 1, 1),
     catchup=False,
 ) as dag:
 
     # Задача установки зависимостей с помощью pip
     install_dependencies = BashOperator(
         task_id='install_dependencies',
-        bash_command='pip install datasets',  # Замените 'requests' на ваши зависимости
+        bash_command='pip install datasets',
     )
 
     # Задача тестирования установленных зависимостей
