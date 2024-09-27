@@ -1,6 +1,7 @@
 from airflow import DAG
-from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
+from airflow.providers.cncf.kubernetes.operators.pod import PodOperator
 from datetime import datetime, timedelta
+import os
 
 from kubernetes.client import models as k8s
 
@@ -31,7 +32,7 @@ with DAG(
     description='DAG для обучения модели на Yelp Reviews с расширенным логированием',
 ) as dag:
 
-    prepare_dataset = KubernetesPodOperator(
+    prepare_dataset = PodOperator(
         task_id='prepare_dataset',
         name='prepare-dataset',
         namespace='default',
@@ -64,7 +65,7 @@ except Exception as e:
         volumes=[shared_volume],
         volume_mounts=[volume_mount],
         node_selector={'cpu': 'true'},
-        container_resources=k8s.V1ResourceRequirements(
+        resources=k8s.V1ResourceRequirements(
             requests={'memory': '4Gi', 'cpu': '2'},
             limits={'memory': '8Gi', 'cpu': '4'}
         ),
@@ -72,11 +73,11 @@ except Exception as e:
         get_logs=True,  # Убедитесь, что логи собираются
     )
 
-    tokenize_dataset = KubernetesPodOperator(
+    tokenize_dataset = PodOperator(
         task_id='tokenize_dataset',
         name='tokenize-dataset',
         namespace='default',
-        image='python:3.9-slim',  # Используем базовый Python-образ
+        image='python:3.9-slim',
         cmds=["bash", "-c"],
         arguments=[
             """
@@ -118,7 +119,7 @@ except Exception as e:
         volumes=[shared_volume],
         volume_mounts=[volume_mount],
         node_selector={'cpu': 'true'},
-        container_resources=k8s.V1ResourceRequirements(
+        resources=k8s.V1ResourceRequirements(
             requests={'memory': '8Gi', 'cpu': '4'},
             limits={'memory': '16Gi', 'cpu': '8'}
         ),
@@ -126,11 +127,11 @@ except Exception as e:
         get_logs=True,
     )
 
-    create_subsets = KubernetesPodOperator(
+    create_subsets = PodOperator(
         task_id='create_subsets',
         name='create-subsets',
         namespace='default',
-        image='python:3.9-slim',  # Используем базовый Python-образ
+        image='python:3.9-slim',
         cmds=["bash", "-c"],
         arguments=[
             """
@@ -166,7 +167,7 @@ except Exception as e:
         volumes=[shared_volume],
         volume_mounts=[volume_mount],
         node_selector={'cpu': 'true'},
-        container_resources=k8s.V1ResourceRequirements(
+        resources=k8s.V1ResourceRequirements(
             requests={'memory': '4Gi', 'cpu': '2'},
             limits={'memory': '8Gi', 'cpu': '4'}
         ),
@@ -174,11 +175,11 @@ except Exception as e:
         get_logs=True,
     )
 
-    train_model = KubernetesPodOperator(
+    train_model = PodOperator(
         task_id='train_model',
         name='train-model',
         namespace='default',
-        image='python:3.9-slim',  # Используем базовый Python-образ
+        image='python:3.9-slim',
         cmds=["bash", "-c"],
         arguments=[
             """
@@ -254,7 +255,7 @@ except Exception as e:
         volumes=[shared_volume],
         volume_mounts=[volume_mount],
         node_selector={'gpu': 'true'},
-        container_resources=k8s.V1ResourceRequirements(
+        resources=k8s.V1ResourceRequirements(
             requests={'memory': '32Gi', 'cpu': '16', 'nvidia.com/gpu': '1'},
             limits={'memory': '64Gi', 'cpu': '32', 'nvidia.com/gpu': '1'}
         ),
@@ -262,11 +263,11 @@ except Exception as e:
         get_logs=True,
     )
 
-    evaluate_model = KubernetesPodOperator(
+    evaluate_model = PodOperator(
         task_id='evaluate_model',
         name='evaluate-model',
         namespace='default',
-        image='python:3.9-slim',  # Используем базовый Python-образ
+        image='python:3.9-slim',
         cmds=["bash", "-c"],
         arguments=[
             """
@@ -313,7 +314,7 @@ except Exception as e:
         volumes=[shared_volume],
         volume_mounts=[volume_mount],
         node_selector={'gpu': 'true'},
-        container_resources=k8s.V1ResourceRequirements(
+        resources=k8s.V1ResourceRequirements(
             requests={'memory': '16Gi', 'cpu': '8', 'nvidia.com/gpu': '1'},
             limits={'memory': '32Gi', 'cpu': '16', 'nvidia.com/gpu': '1'}
         ),
@@ -322,11 +323,11 @@ except Exception as e:
     )
 
     # Опциональный шаг: Native PyTorch Training Loop
-    native_pytorch_training = KubernetesPodOperator(
+    native_pytorch_training = PodOperator(
         task_id='native_pytorch_training',
         name='native-pytorch-training',
         namespace='default',
-        image='python:3.9-slim',  # Используем базовый Python-образ
+        image='python:3.9-slim',
         cmds=["bash", "-c"],
         arguments=[
             """
@@ -418,7 +419,7 @@ except Exception as e:
         volumes=[shared_volume],
         volume_mounts=[volume_mount],
         node_selector={'gpu': 'true'},
-        container_resources=k8s.V1ResourceRequirements(
+        resources=k8s.V1ResourceRequirements(
             requests={'memory': '32Gi', 'cpu': '16', 'nvidia.com/gpu': '1'},
             limits={'memory': '64Gi', 'cpu': '32', 'nvidia.com/gpu': '1'}
         ),
