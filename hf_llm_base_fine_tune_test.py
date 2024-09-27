@@ -65,10 +65,12 @@ except Exception as e:
         volumes=[shared_volume],
         volume_mounts=[volume_mount],
         node_selector={'cpu': 'true'},
-        resources=k8s.V1ResourceRequirements(
-            requests={'memory': '4Gi', 'cpu': '2'},
-            limits={'memory': '8Gi', 'cpu': '4'}
-        ),
+        resources={
+            "request_cpu": "2",
+            "request_memory": "4Gi",
+            "limit_cpu": "4",
+            "limit_memory": "8Gi",
+        },
         execution_timeout=timedelta(minutes=30),
         get_logs=True,  # Убедитесь, что логи собираются
     )
@@ -94,18 +96,18 @@ try:
     print('Loading prepared dataset...')
     dataset = load_from_disk('/shared-data/dataset')
     print('Dataset loaded successfully.')
-    
+
     print('Loading tokenizer...')
     tokenizer = AutoTokenizer.from_pretrained('google-bert/bert-base-cased')
     print('Tokenizer loaded successfully.')
-    
+
     def tokenize_function(examples):
         return tokenizer(examples['text'], padding='max_length', truncation=True)
-    
+
     print('Tokenizing dataset...')
     tokenized_datasets = dataset.map(tokenize_function, batched=True)
     print('Dataset tokenized successfully.')
-    
+
     print('Saving tokenized dataset...')
     tokenized_datasets.save_to_disk('/shared-data/tokenized_dataset')
     print('Tokenized dataset saved successfully.')
@@ -119,10 +121,12 @@ except Exception as e:
         volumes=[shared_volume],
         volume_mounts=[volume_mount],
         node_selector={'cpu': 'true'},
-        resources=k8s.V1ResourceRequirements(
-            requests={'memory': '8Gi', 'cpu': '4'},
-            limits={'memory': '16Gi', 'cpu': '8'}
-        ),
+        resources={
+            "request_cpu": "4",
+            "request_memory": "8Gi",
+            "limit_cpu": "8",
+            "limit_memory": "16Gi",
+        },
         execution_timeout=timedelta(minutes=60),
         get_logs=True,
     )
@@ -147,12 +151,12 @@ try:
     print('Loading tokenized dataset...')
     tokenized_datasets = load_from_disk('/shared-data/tokenized_dataset')
     print('Tokenized dataset loaded successfully.')
-    
+
     print('Creating small train and eval subsets...')
     small_train_dataset = tokenized_datasets['train'].shuffle(seed=42).select(range(1000))
     small_eval_dataset = tokenized_datasets['test'].shuffle(seed=42).select(range(1000))
     print('Subsets created successfully.')
-    
+
     print('Saving subsets...')
     small_train_dataset.save_to_disk('/shared-data/small_train_dataset')
     small_eval_dataset.save_to_disk('/shared-data/small_eval_dataset')
@@ -167,10 +171,12 @@ except Exception as e:
         volumes=[shared_volume],
         volume_mounts=[volume_mount],
         node_selector={'cpu': 'true'},
-        resources=k8s.V1ResourceRequirements(
-            requests={'memory': '4Gi', 'cpu': '2'},
-            limits={'memory': '8Gi', 'cpu': '4'}
-        ),
+        resources={
+            "request_cpu": "2",
+            "request_memory": "4Gi",
+            "limit_cpu": "4",
+            "limit_memory": "8Gi",
+        },
         execution_timeout=timedelta(minutes=30),
         get_logs=True,
     )
@@ -199,11 +205,11 @@ try:
     train_dataset = load_from_disk('/shared-data/small_train_dataset')
     eval_dataset = load_from_disk('/shared-data/small_eval_dataset')
     print('Datasets loaded successfully.')
-    
+
     print('Loading pretrained model...')
     model = AutoModelForSequenceClassification.from_pretrained('google-bert/bert-base-cased', num_labels=5)
     print('Model loaded successfully.')
-    
+
     print('Setting up training arguments...')
     training_args = TrainingArguments(
         output_dir='/shared-data/test_trainer',
@@ -214,16 +220,16 @@ try:
         weight_decay=0.01,
     )
     print('Training arguments set successfully.')
-    
+
     print('Loading evaluation metric...')
     metric = evaluate.load('accuracy')
     print('Evaluation metric loaded successfully.')
-    
+
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
         predictions = np.argmax(logits, axis=-1)
         return metric.compute(predictions=predictions, references=labels)
-    
+
     print('Initializing Trainer...')
     trainer = Trainer(
         model=model,
@@ -233,15 +239,15 @@ try:
         compute_metrics=compute_metrics,
     )
     print('Trainer initialized successfully.')
-    
+
     print('Starting training...')
     trainer.train()
     print('Training completed successfully.')
-    
+
     print('Saving fine-tuned model...')
     trainer.save_model('/shared-data/fine_tuned_model')
     print('Model saved successfully.')
-    
+
     print('Starting evaluation...')
     results = trainer.evaluate()
     print('Evaluation Results:', results)
@@ -255,10 +261,13 @@ except Exception as e:
         volumes=[shared_volume],
         volume_mounts=[volume_mount],
         node_selector={'gpu': 'true'},
-        resources=k8s.V1ResourceRequirements(
-            requests={'memory': '32Gi', 'cpu': '16', 'nvidia.com/gpu': '1'},
-            limits={'memory': '64Gi', 'cpu': '32', 'nvidia.com/gpu': '1'}
-        ),
+        resources={
+            "request_cpu": "16",
+            "request_memory": "32Gi",
+            "limit_cpu": "32",
+            "limit_memory": "64Gi",
+            "nvidia.com/gpu": "1",
+        },
         execution_timeout=timedelta(hours=2),
         get_logs=True,
     )
@@ -287,7 +296,7 @@ try:
     model = AutoModelForSequenceClassification.from_pretrained('/shared-data/fine_tuned_model')
     eval_dataset = load_from_disk('/shared-data/small_eval_dataset')
     print('Model and dataset loaded successfully.')
-    
+
     print('Setting up Trainer for evaluation...')
     trainer = Trainer(
         model=model,
@@ -300,7 +309,7 @@ try:
         },
     )
     print('Trainer set up successfully.')
-    
+
     print('Starting evaluation...')
     results = trainer.evaluate()
     print('Final Evaluation Results:', results)
@@ -314,10 +323,13 @@ except Exception as e:
         volumes=[shared_volume],
         volume_mounts=[volume_mount],
         node_selector={'gpu': 'true'},
-        resources=k8s.V1ResourceRequirements(
-            requests={'memory': '16Gi', 'cpu': '8', 'nvidia.com/gpu': '1'},
-            limits={'memory': '32Gi', 'cpu': '16', 'nvidia.com/gpu': '1'}
-        ),
+        resources={
+            "request_cpu": "8",
+            "request_memory": "16Gi",
+            "limit_cpu": "16",
+            "limit_memory": "32Gi",
+            "nvidia.com/gpu": "1",
+        },
         execution_timeout=timedelta(hours=1),
         get_logs=True,
     )
@@ -352,21 +364,21 @@ try:
     train_dataset = load_from_disk('/shared-data/small_train_dataset')
     eval_dataset = load_from_disk('/shared-data/small_eval_dataset')
     print('Datasets loaded successfully.')
-    
+
     print('Creating DataLoaders...')
     train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=8)
     eval_dataloader = DataLoader(eval_dataset, batch_size=8)
     print('DataLoaders created successfully.')
-    
+
     print('Loading pretrained model...')
     model = AutoModelForSequenceClassification.from_pretrained('google-bert/bert-base-cased', num_labels=5)
     print('Model loaded successfully.')
-    
+
     print('Setting device...')
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     model.to(device)
     print(f'Using device: {device}')
-    
+
     print('Setting up optimizer and scheduler...')
     optimizer = AdamW(model.parameters(), lr=5e-5)
     num_epochs = 3
@@ -375,11 +387,11 @@ try:
         name='linear', optimizer=optimizer, num_warmup_steps=0, num_training_steps=num_training_steps
     )
     print('Optimizer and scheduler set up successfully.')
-    
+
     print('Loading evaluation metric...')
     metric = evaluate.load('accuracy')
     print('Evaluation metric loaded successfully.')
-    
+
     print('Starting training loop...')
     progress_bar = tqdm(range(num_training_steps))
     model.train()
@@ -390,20 +402,20 @@ try:
             outputs = model(**batch)
             loss = outputs.loss
             loss.backward()
-    
+
             optimizer.step()
             lr_scheduler.step()
             optimizer.zero_grad()
             progress_bar.update(1)
     print('Training loop completed successfully.')
-    
+
     print('Starting evaluation loop...')
     model.eval()
     for batch in eval_dataloader:
         batch = {k: v.to(device) for k, v in batch.items()}
         with torch.no_grad():
             outputs = model(**batch)
-    
+
         logits = outputs.logits
         predictions = torch.argmax(logits, dim=-1)
         metric.add_batch(predictions=predictions, references=batch['labels'])
@@ -419,10 +431,13 @@ except Exception as e:
         volumes=[shared_volume],
         volume_mounts=[volume_mount],
         node_selector={'gpu': 'true'},
-        resources=k8s.V1ResourceRequirements(
-            requests={'memory': '32Gi', 'cpu': '16', 'nvidia.com/gpu': '1'},
-            limits={'memory': '64Gi', 'cpu': '32', 'nvidia.com/gpu': '1'}
-        ),
+        resources={
+            "request_cpu": "16",
+            "request_memory": "32Gi",
+            "limit_cpu": "32",
+            "limit_memory": "64Gi",
+            "nvidia.com/gpu": "1",
+        },
         execution_timeout=timedelta(hours=3),
         get_logs=True,
     )
