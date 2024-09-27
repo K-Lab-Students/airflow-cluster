@@ -6,10 +6,15 @@ from airflow import DAG
 import logging
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
+from airflow.datasets import Dataset
 from datetime import datetime, timedelta
 import os
 
 logger = logging.getLogger(__name__)
+
+# Определение URI для сохранения датасета
+dataset_uri = "file:///tmp/airflow_datasets/yelp_review_record.txt"  # Можно настроить путь по необходимости
+example_dataset = Dataset(dataset_uri)
 
 # Функция для тестирования установленной зависимости
 def test_dependency(**kwargs):
@@ -20,7 +25,7 @@ def test_dependency(**kwargs):
         logger.info(f"{store}")
         logger.info("Dependency 'datasets' installed successfully and working!")
         print("Dependency 'datasets' installed successfully and working!")
-        
+
         # Push the dataset record to XCom for downstream tasks
         kwargs['ti'].xcom_push(key='dataset_record', value=store)
         
@@ -88,6 +93,7 @@ with DAG(
         task_id='save_dataset',
         python_callable=save_dataset,
         provide_context=True,  # Позволяет передавать контекст в функцию
+        outlets=[example_dataset],  # Указываем датасет для записи в Dataset вкладку
     )
 
     # Определение последовательности выполнения задач
