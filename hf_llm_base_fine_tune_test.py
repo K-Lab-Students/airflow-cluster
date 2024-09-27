@@ -1,5 +1,5 @@
 from airflow import DAG
-from airflow.providers.cncf.kubernetes.operators.pod import PodOperator
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from datetime import datetime, timedelta
 import os
 
@@ -32,7 +32,7 @@ with DAG(
     description='DAG для обучения модели на Yelp Reviews с расширенным логированием',
 ) as dag:
 
-    prepare_dataset = PodOperator(
+    prepare_dataset = KubernetesPodOperator(
         task_id='prepare_dataset',
         name='prepare-dataset',
         namespace='default',
@@ -73,7 +73,7 @@ except Exception as e:
         get_logs=True,  # Убедитесь, что логи собираются
     )
 
-    tokenize_dataset = PodOperator(
+    tokenize_dataset = KubernetesPodOperator(
         task_id='tokenize_dataset',
         name='tokenize-dataset',
         namespace='default',
@@ -127,7 +127,7 @@ except Exception as e:
         get_logs=True,
     )
 
-    create_subsets = PodOperator(
+    create_subsets = KubernetesPodOperator(
         task_id='create_subsets',
         name='create-subsets',
         namespace='default',
@@ -175,7 +175,7 @@ except Exception as e:
         get_logs=True,
     )
 
-    train_model = PodOperator(
+    train_model = KubernetesPodOperator(
         task_id='train_model',
         name='train-model',
         namespace='default',
@@ -263,7 +263,7 @@ except Exception as e:
         get_logs=True,
     )
 
-    evaluate_model = PodOperator(
+    evaluate_model = KubernetesPodOperator(
         task_id='evaluate_model',
         name='evaluate-model',
         namespace='default',
@@ -323,7 +323,7 @@ except Exception as e:
     )
 
     # Опциональный шаг: Native PyTorch Training Loop
-    native_pytorch_training = PodOperator(
+    native_pytorch_training = KubernetesPodOperator(
         task_id='native_pytorch_training',
         name='native-pytorch-training',
         namespace='default',
