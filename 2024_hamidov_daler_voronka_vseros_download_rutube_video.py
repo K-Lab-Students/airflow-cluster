@@ -2,28 +2,54 @@ from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 from datetime import datetime
-import logger
+import logging
 import time
 import wor2vec
+from confluent_kafka import Consumer, KafkaException
+logging.basicConfig(level=logging.INFO)
+consumer = Consumer(consumer_conf)  
 
+consumer_conf = {
+    'bootstrap.servers': '192.168.1.50:9092',
+    'group.id': 'rutube-consumer-group',
+    'auto.offset.reset': 'latest', 
+}
 def read_data():
-    print("Reading data")
-    logger.info("Reading data...")
-    time.sleep(5)
+    print("Reading data...")
+    logging.info("Reading data...")
+    consumer.subscribe(['download_rutube_video'])
+    try:
+        while True:
+            msg = consumer.poll(timeout=1.0)
+
+            if msg is None:
+                continue
+            if msg.error():
+                raise KafkaException(msg.error())
+
+            # Message received
+            print(f"Received message: {msg.value().decode('utf-8')}")
+            logging.info(f"Message received: {msg.value().decode('utf-8')}")
+            time.sleep(5)
+
+    except Exception as e:
+        logging.error(f"Error while reading messages: {str(e)}")
+    finally:
+        consumer.close()
 
 def create_embeddings():
     print("Creating embeddings")
-    logger.info("Creating embeddings...")
+    logging.info("Creating embeddings...")
     time.sleep(5)
 
 def building_fass():
     print("Index building")
-    logger.info("Index building...")
+    logging.info("Index building...")
     time.sleep(5)
 
 def creating():
     print("Creating")
-    logger.info("Creating...")
+    logging.info("Creating...")
     time.sleep(5)   
 
 
