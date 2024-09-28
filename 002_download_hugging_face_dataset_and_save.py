@@ -73,6 +73,7 @@ with DAG(
     schedule_interval=None,  # Выполняется по вызову
     start_date=datetime(2024, 1, 1),
     catchup=False,
+    tags = ["example", "dataset"]
 ) as dag:
 
     # Задача установки зависимостей с помощью pip

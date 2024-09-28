@@ -22,6 +22,7 @@ with DAG(
     schedule_interval=None,
     start_date=datetime(2024, 1, 1),
     catchup=False,
+    tags = ["example", "ml", "ML Flow", "node:cpu"]
 ) as dag:
 
     # Определение ресурсов для CPU в виде словаря
