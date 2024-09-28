@@ -3,6 +3,7 @@
 # 
 
 from airflow import DAG
+import logging
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from datetime import datetime, timedelta
 
