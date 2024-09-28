@@ -17,7 +17,7 @@ consumer_conf = {
 def read_data():
     print("Reading data...")
     logging.info("Reading data...")
-    consumer.subscribe(['download_rutube_video'])
+    consumer.subscribe(['2024_hamidov_daler_voronka_vseros_download_rutube_video'])
     try:
         while True:
             msg = consumer.poll(timeout=1.0)
@@ -50,8 +50,25 @@ def building_fass():
 def creating():
     print("Creating")
     logging.info("Creating...")
-    time.sleep(5)   
+    consumer.subscribe(['2024_hamidov_daler_voronka_vseros_download_rutube_video'])
+    try:
+        while True:
+            msg = consumer.poll(timeout=1.0)
 
+            if msg is None:
+                continue
+            if msg.error():
+                raise KafkaException(msg.error())
+
+            # Message received
+            print(f"Received message: {msg.value().decode('utf-8')}")
+            logging.info(f"Message received: {msg.value().decode('utf-8')}")
+            time.sleep(5)
+
+    except Exception as e:
+        logging.error(f"Error while reading messages: {str(e)}")
+    finally:  
+        consumer.close()
 
 default_args = {
     'owner': 'airflow',
@@ -60,7 +77,7 @@ default_args = {
 }
 
 dag = DAG(
-    '2024_hamidov_daler_voronka_vseros_download_rutube_video',
+    '1024_daler_homidov_main_pypline_prototipe',
     default_args=default_args,
     description='A basic test DAG',
     schedule_interval='@daily', 
