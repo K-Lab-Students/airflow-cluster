@@ -16,7 +16,7 @@ default_args = {
 
 # Initialize the DAG
 dag = DAG(
-    'test_dag',
+    '2024_hamidov_daler_voronka_vseros_download_rutube_video',
     default_args=default_args,
     description='A simple test DAG',
     schedule_interval='@daily',  # Runs daily
