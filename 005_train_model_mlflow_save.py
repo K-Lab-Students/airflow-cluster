@@ -53,7 +53,7 @@ with DAG(
     catchup=False,
 ) as dag:
 
-    # Определение ресурсов для CPU
+    # Определение ресурсов для CPUe
     cpu_resources = k8s.V1ResourceRequirements(
         requests={
             'memory': '1Gi',
