@@ -23,7 +23,7 @@ def gpu_check():
     result = sum([random.random() for _ in range(1000000)])
     print(f"GPU check result: {result}")
 
-with DAG('test_cluster_dag', default_args=default_args, schedule_interval=None, catchup=False) as dag:
+with DAG('multi_node_cluster_test', default_args=default_args, schedule_interval=None, catchup=False) as dag:
 
     # Define resource requirements
     cpu_intensive_resources = k8s.V1ResourceRequirements(
