@@ -2,35 +2,70 @@ from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 from datetime import datetime
+import logger
+import time
+import wor2vec
 
-# Define a Python function for testing
-def test_function():
-    print("Test function executed")
+def read_data():
+    print("Reading data")
+    logger.info("Reading data...")
+    time.sleep(5)
 
-# Define default arguments
+def create_embeddings():
+    print("Creating embeddings")
+    logger.info("Creating embeddings...")
+    time.sleep(5)
+
+def building_fass():
+    print("Index building")
+    logger.info("Index building...")
+    time.sleep(5)
+
+def creating():
+    print("Creating")
+    logger.info("Creating...")
+    time.sleep(5)   
+
+
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2024, 9, 28),
     'retries': 1,
 }
 
-# Initialize the DAG
 dag = DAG(
-    'test_dag',
+    '2024_hamidov_daler_voronka_vseros_download_rutube_video',
     default_args=default_args,
-    description='A simple test DAG',
-    schedule_interval='@daily',  # Runs daily
+    description='A basic test DAG',
+    schedule_interval='@daily', 
 )
 
-# Define tasks
 start_task = DummyOperator(
     task_id='start_task',
     dag=dag,
 )
 
-test_python_task = PythonOperator(
+loadind_data = PythonOperator(
     task_id='test_python_task',
-    python_callable=test_function,
+    python_callable=read_data,
+    dag=dag,
+)
+
+creating_embedd = PythonOperator(
+    task_id='test_python_task',
+    python_callable=create_embeddings,
+    dag=dag,
+)
+
+building_fass = PythonOperator(
+    task_id='test_python_task',
+    python_callable=building_fass,
+    dag=dag,
+)
+
+generating_ans = PythonOperator(
+    task_id='test_python_task',
+    python_callable=creating,
     dag=dag,
 )
 
@@ -39,5 +74,4 @@ end_task = DummyOperator(
     dag=dag,
 )
 
-# Define task dependencies
-start_task >> test_python_task >> end_task
+start_task >> loadind_data >>  creating_embedd >> building_fass >> generating_ans >> end_task
