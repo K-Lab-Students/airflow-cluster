@@ -71,7 +71,7 @@ if __name__ == "__main__":
         image='python:3.9-slim',  # Стандартный Python-образ
         cmds=["python", "-c", train_model_code],
         node_selector={'cpu': 'true'},  # Селектор узлов для CPU
-        resources=cpu_resources,
+        # resources=cpu_resources,
         get_logs=True,
         execution_timeout=timedelta(minutes=10),
     )
