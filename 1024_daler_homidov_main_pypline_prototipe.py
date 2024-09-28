@@ -4,7 +4,6 @@ from airflow.operators.python_operator import PythonOperator
 from datetime import datetime
 import logging
 import time
-import wor2vec
 from confluent_kafka import Consumer, KafkaException
 logging.basicConfig(level=logging.INFO)
 consumer = Consumer(consumer_conf)  
