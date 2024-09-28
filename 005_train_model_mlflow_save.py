@@ -45,7 +45,7 @@ print(f'Model trained with accuracy: {accuracy}')
     """
 
 with DAG(
-    dag_id='train_model_on_cpu',
+    dag_id='train_model_on_cpu_mlflow_save',
     default_args=default_args,
     description='A DAG to train a simple model on CPU',
     schedule_interval=None,
@@ -71,7 +71,7 @@ with DAG(
         namespace='default',
         image='python:3.9-slim',  # Используйте подходящий образ с Python
         cmds=["bash", "-c", create_train_model_command()],
-        node_selector={'node-type': 'cpu'},  # Убедитесь, что ваши узлы имеют такую метку
+        node_selector={'cpu': 'true'},  # Убедитесь, что ваши узлы имеют такую метку
         resources=cpu_resources,
         get_logs=True,
         execution_timeout=timedelta(minutes=10),
