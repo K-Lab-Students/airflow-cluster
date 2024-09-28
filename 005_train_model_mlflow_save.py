@@ -36,16 +36,21 @@ with DAG(
 import sys
 import subprocess
 import sys
-from sklearn.datasets import load_iris
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
 
 # Установка зависимостей, если необходимо
 try:
     import sklearn
+    from sklearn.datasets import load_iris
+    from sklearn.model_selection import train_test_split
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.metrics import accuracy_score
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "scikit-learn"])
+    import sklearn
+    from sklearn.datasets import load_iris
+    from sklearn.model_selection import train_test_split
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.metrics import accuracy_score
 
 # Функция обучения модели
 def train_model():
