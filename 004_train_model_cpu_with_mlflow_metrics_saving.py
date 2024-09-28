@@ -64,3 +64,26 @@ def train_model():
 
         # Log the final model to MLflow
         mlflow.sklearn.log_model(model, "random_forest_model")
+
+
+default_args = {
+    'owner': 'airflow',
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
+
+with DAG(
+    dag_id='train_model_with_mlflow',
+    default_args=default_args,
+    description='A DAG to train a model on CPU and log metrics with MLFlow',
+    schedule_interval=None,
+    start_date=datetime(2024, 1, 1),
+    catchup=False,
+) as dag:
+
+    train_model_task = PythonOperator(
+        task_id='train_model_task',
+        python_callable=train_model,
+    )
+
+    train_model_task
