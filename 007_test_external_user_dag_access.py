@@ -3,22 +3,35 @@ from airflow.operators.python_operator import PythonOperator
 from datetime import datetime
 
 def hello_world():
-    print("Hello World from external_user DAG!")
+    print("Hello, World!")
 
+# Default arguments for the DAG
+default_args = {
+    'owner': 'airflow',
+    'start_date': datetime(2023, 1, 1),
+}
+
+# Set the category of the DAG
+category = 'External User'
+
+# Define access control based on category
+access_control = {}
+if category == 'External User':
+    access_control = {
+        'external_user': {'can_read', 'can_edit'}
+    }
+
+# Define the DAG with access control
 with DAG(
-    dag_id="hello_world_external_user_test_access",
+    dag_id='hello_world_external_user2',
+    default_args=default_args,
     schedule_interval='@daily',
-    start_date=datetime(2023, 1, 1),
+    access_control=access_control,
     catchup=False,
-    access_control={
-        'External User': {'can_read', 'can_edit', 'can_dag_run'},  # Доступ для external_user
-        'Admin': {'can_read', 'can_edit', 'can_dag_run'},  # Доступ для администратора
-        'Viewer': {'can_read'},  # Просмотр для привилегированных пользователей
-    },
-    tags=['External User'],  # Тег для фильтрации
 ) as dag:
-    
-    hello_world_task = PythonOperator(
-        task_id="hello_world_task",
-        python_callable=hello_world
+
+    # Define the task
+    hello_task = PythonOperator(
+        task_id='hello_world_task',
+        python_callable=hello_world,
     )
