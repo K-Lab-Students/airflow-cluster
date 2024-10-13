@@ -11,11 +11,11 @@ with DAG(
     start_date=datetime(2023, 1, 1),
     catchup=False,
     access_control={
-        'external_user': {'can_read', 'can_edit', 'can_dag_run'},  # Доступ для external_user
+        'External User': {'can_read', 'can_edit', 'can_dag_run'},  # Доступ для external_user
         'Admin': {'can_read', 'can_edit', 'can_dag_run'},  # Доступ для администратора
         'Viewer': {'can_read'},  # Просмотр для привилегированных пользователей
     },
-    tags=['external_user'],  # Тег для фильтрации
+    tags=['External User'],  # Тег для фильтрации
 ) as dag:
     
     hello_world_task = PythonOperator(
