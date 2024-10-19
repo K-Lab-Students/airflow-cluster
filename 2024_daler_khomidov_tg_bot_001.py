@@ -5,7 +5,7 @@ import requests
 
 def send_telegram_message():
     bot_token = '8128045612:AAH5dgKBSCpbUYMU4fD_qT2VHmoZejrUxew'  # Замените на ваш токен бота
-    chat_id = '-1001234567890'  # Замените на ваш chat_id
+    chat_id = '-4525994612'  # Замените на ваш chat_id
     message = "✅ *Airflow Status*\nAirflow is up and running!"
 
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
