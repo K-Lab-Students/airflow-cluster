@@ -2,15 +2,15 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 from kubernetes import client, config
-from telegram import Bot
-from telegram.error import TelegramError
+import requests
+from airflow.models import Variable
 
 # Функция для получения информации о доступных нодах
 def get_available_nodes():
     try:
-        # Загрузка конфигурации Kubernetes (например, из kubeconfig или внутри кластера)
+        # Загрузка конфигурации Kubernetes
         config.load_incluster_config()  # Используйте, если DAG работает внутри кластера
-        # config.load_kube_config()  # Используйте, если DAG работает локально с доступом к kubeconfig
+        # config.load_kube_config()     # Используйте, если DAG работает локально с доступом к kubeconfig
 
         v1 = client.CoreV1Api()
         nodes = v1.list_node()
@@ -28,7 +28,10 @@ def get_available_nodes():
             gpu = allocatable.get('nvidia.com/gpu', '0')
 
             # Преобразование ресурсов в числа
-            cpu_count = float(cpu.replace('m', '')) / 1000  # Преобразование из мильядных
+            if cpu.endswith('m'):
+                cpu_count = float(cpu.rstrip('m')) / 1000  # Преобразование из мильядных
+            else:
+                cpu_count = float(cpu)
             gpu_count = int(gpu)
 
             # Суммируем доступные ресурсы
@@ -54,9 +57,10 @@ def get_available_nodes():
 
 # Функция для отправки сообщения в Telegram
 def send_hourly_report():
-    # Токен и chat_id второго бота ("кошкодевочка")
-    bot_token = '8128045612:AAFo8RrpRlKO6KH82w9-_m9pFwE1lENZQak'  # Замените на токен вашего бота "кошкодевочка"
-    chat_id = '-1002095886585'          # Замените на chat_id вашей группы или чата
+    # Получение токена бота, chat_id и message_thread_id из Airflow Variables
+    bot_token = Variable.get('telegram_bot_token')
+    chat_id = Variable.get('telegram_chat_id')
+    message_thread_id = Variable.get('telegram_message_thread_id', default_var=None)
 
     # Получение информации о нодах
     node_info = get_available_nodes()
@@ -82,20 +86,35 @@ def send_hourly_report():
   - Память: {node['memory']}
 """
 
-    # Инициализация бота
-    bot = Bot(token=bot_token)
+    # URL для отправки сообщения
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+
+    # Параметры запроса
+    payload = {
+        "chat_id": chat_id,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
+
+    # Добавление message_thread_id, если он задан
+    if message_thread_id:
+        payload["message_thread_id"] = message_thread_id
 
     try:
-        # Отправка сообщения
-        bot.send_message(
-            chat_id=chat_id,
-            text=message,
-            parse_mode='Markdown',
-            message_thread_id=15206  # Замените на ваш message_thread_id (topic ID)
-        )
-        print("Ежечасный отчёт успешно отправлен.")
-    except TelegramError as e:
-        print(f"Ошибка при отправке сообщения: {e}")
+        response = requests.post(url, data=payload)
+        response.raise_for_status()
+        print(f"Ежечасный отчёт успешно отправлен: {response.json()}")
+    except requests.exceptions.HTTPError as errh:
+        print(f"HTTP Error: {errh} - Ответ: {response.text}")
+        raise
+    except requests.exceptions.ConnectionError as errc:
+        print(f"Error Connecting: {errc}")
+        raise
+    except requests.exceptions.Timeout as errt:
+        print(f"Timeout Error: {errt}")
+        raise
+    except requests.exceptions.RequestException as err:
+        print(f"OOps: Something Else {err}")
         raise
 
 # Default arguments для DAG
