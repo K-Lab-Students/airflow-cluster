@@ -3,7 +3,6 @@ from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 import requests
 
-# Функция для отправки сообщения в Telegram
 def send_telegram_message():
     bot_token = '8128045612:AAH5dgKBSCpbUYMU4fD_qT2VHmoZejrUxew'  # Замените на ваш токен бота
     chat_id = '-1001234567890'  # Замените на ваш chat_id
