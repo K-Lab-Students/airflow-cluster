@@ -12,38 +12,39 @@ import os
 # Default arguments for the DAG
 default_args = {
     'owner': 'кошкодевочка',
-    'name' : 'hourly-report',  # Owner of the DAG
-    'start_date': datetime(2024, 10, 9),
+    'start_date': datetime(2024, 9, 9),
     'retries': 1,
-    'retry_delay': timedelta(minutes=1),
+    'retry_delay': timedelta(minutes=5),
 }
 
 # DAG definition
 with DAG(
-    'multi_node_cluster_test',
+    dag_id='Catgitl_bot',
     default_args=default_args,
-    schedule_interval=None,
+    description='DAG for multi-node cluster testing and hourly reporting',
+    schedule_interval=timedelta(hours=1),  # Set to run every hour
     catchup=False,
-    tags=["example", "node:cpu", "node:gpu"],
+    tags=['prod', 'node:cpu', 'node:gpu', 'hourly-report'],
 ) as dag:
 
-    # Define resource requirements
+    # Import Kubernetes models
     from kubernetes.client import models as k8s
 
+    # Define resource requirements
     cpu_intensive_resources = k8s.V1ResourceRequirements(
         requests={
             'memory': '32Gi',
-            'cpu': '4'
+            'cpu': '4',
         },
         limits={
             'memory': '60Gi',
-            'cpu': '8'
+            'cpu': '8',
         }
     )
 
     gpu_resources = k8s.V1ResourceRequirements(
         limits={
-            'nvidia.com/gpu': '1'
+            'nvidia.com/gpu': '1',
         }
     )
 
@@ -52,7 +53,7 @@ with DAG(
         task_id='cpu_intensive_task',
         name='cpu-intensive-task',
         namespace='default',
-        image='your-cpu-image:latest',
+        image='your-cpu-image:latest',  # Replace with your actual CPU image
         cmds=["python", "-c", "import time; time.sleep(10); print('CPU task completed')"],
         node_selector={'cpu': 'true'},
         container_resources=cpu_intensive_resources,
@@ -64,7 +65,7 @@ with DAG(
         task_id='gpu_task_1',
         name='gpu-task-1',
         namespace='default',
-        image='your-gpu-image:latest',
+        image='your-gpu-image:latest',  # Replace with your actual GPU image
         cmds=["python", "-c", "import time; time.sleep(5); print('GPU task 1 completed')"],
         node_selector={'gpu': 'true'},
         container_resources=gpu_resources,
@@ -76,7 +77,7 @@ with DAG(
         task_id='gpu_task_2',
         name='gpu-task-2',
         namespace='default',
-        image='your-gpu-image:latest',
+        image='your-gpu-image:latest',  # Replace with your actual GPU image
         cmds=["python", "-c", "import time; time.sleep(5); print('GPU task 2 completed')"],
         node_selector={'gpu': 'true'},
         container_resources=gpu_resources,
@@ -115,7 +116,7 @@ with DAG(
         # Load Kubernetes configuration
         try:
             config.load_incluster_config()
-        except:
+        except config.ConfigException:
             config.load_kube_config()
 
         # Get node information
@@ -151,21 +152,21 @@ with DAG(
 
             # Format message
             message = f"""
-    🐱 *Ежечасный Отчёт Кластера* 🐱
+🐱 *Ежечасный Отчёт Кластера* 🐱
 
-    📊 *Доступные ресурсы для обучения:*
-    - **CPU:** {total_cpus} ядра
-    - **GPU:** {total_gpus} GPU
+📊 *Доступные ресурсы для обучения:*
+- **CPU:** {total_cpus} ядра
+- **GPU:** {total_gpus} GPU
 
-    🖥️ *Детали по нодам:*
-    """
+🖥️ *Детали по нодам:*
+"""
             for node in nodes_info:
                 message += f"""
-    - *Нода:* {node['name']}
-      - CPU: {node['cpu']} ядра
-      - GPU: {node['gpu']} GPU
-      - Память: {node['memory']}
-    """
+- *Нода:* {node['name']}
+  - CPU: {node['cpu']} ядра
+  - GPU: {node['gpu']} GPU
+  - Память: {node['memory']}
+"""
 
             # Send message to Telegram
             url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
