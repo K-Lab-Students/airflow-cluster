@@ -14,7 +14,7 @@ default_args = {
     'owner': 'кошкодевочка',
     'start_date': datetime(2024, 9, 9),
     'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    'retry_delay': timedelta(minutes=1),
 }
 
 # DAG definition
