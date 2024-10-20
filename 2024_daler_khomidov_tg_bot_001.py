@@ -130,7 +130,7 @@ with DAG(
     dag_id='telegram_hourly_report',
     default_args=default_args,
     description='DAG для отправки ежечасных отчётов о доступных кластерных нодах через Telegram бот "кошкодевочка"',
-    schedule_interval=timedelta(hours=1),  # Запуск раз в час
+    schedule_interval=timedelta(minutes=1),  # Запуск раз в час
     start_date=datetime(2024, 10, 19, 22, 40),  # Установите желаемую дату и время начала
     catchup=False,
     tags=['telegram', 'report', 'hourly', 'cluster'],
