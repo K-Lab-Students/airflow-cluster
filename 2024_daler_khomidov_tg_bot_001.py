@@ -7,7 +7,7 @@ import requests
 # Default arguments for the DAG
 default_args = {
     'owner': 'кошкодевочка',
-    'start_date': datetime(2024, 10, 19, 22, 40),  # Установите желаемую дату и время начала
+    'start_date': datetime(2024, 7, 19, 22, 40),  # Установите желаемую дату и время начала
     'retries': 0,
     'retry_delay': timedelta(minutes=5),
 }
