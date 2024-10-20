@@ -7,12 +7,11 @@ import random
 import math
 from kubernetes import client, config
 import requests
-import os
 
 # Default arguments for the DAG
 default_args = {
     'owner': 'кошкодевочка',
-    'start_date': datetime(2024, 9, 9),
+    'start_date': datetime(2023, 10, 20),  # Adjusted to a recent date
     'retries': 1,
     'retry_delay': timedelta(minutes=1),
 }
@@ -55,8 +54,8 @@ with DAG(
         namespace='default',
         image='your-cpu-image:latest',  # Replace with your actual CPU image
         cmds=["python", "-c", "import time; time.sleep(10); print('CPU task completed')"],
-        node_selector={'cpu': 'true'},
-        container_resources=cpu_intensive_resources,
+        node_selector={'cpu': 'true'},  # Ensure this label exists on your nodes
+        resources=cpu_intensive_resources,  # Corrected parameter name
         execution_timeout=timedelta(seconds=300),
     )
 
@@ -67,8 +66,8 @@ with DAG(
         namespace='default',
         image='your-gpu-image:latest',  # Replace with your actual GPU image
         cmds=["python", "-c", "import time; time.sleep(5); print('GPU task 1 completed')"],
-        node_selector={'gpu': 'true'},
-        container_resources=gpu_resources,
+        node_selector={'gpu': 'true'},  # Ensure this label exists on your nodes
+        resources=gpu_resources,  # Corrected parameter name
         execution_timeout=timedelta(seconds=300),
     )
 
@@ -79,8 +78,8 @@ with DAG(
         namespace='default',
         image='your-gpu-image:latest',  # Replace with your actual GPU image
         cmds=["python", "-c", "import time; time.sleep(5); print('GPU task 2 completed')"],
-        node_selector={'gpu': 'true'},
-        container_resources=gpu_resources,
+        node_selector={'gpu': 'true'},  # Ensure this label exists on your nodes
+        resources=gpu_resources,  # Corrected parameter name
         execution_timeout=timedelta(seconds=300),
     )
 
@@ -117,7 +116,11 @@ with DAG(
         try:
             config.load_incluster_config()
         except config.ConfigException:
-            config.load_kube_config()
+            try:
+                config.load_kube_config()
+            except Exception as e:
+                print(f"Failed to load Kubernetes configuration: {e}")
+                raise
 
         # Get node information
         try:
@@ -130,10 +133,11 @@ with DAG(
 
             for node in nodes.items:
                 allocatable = node.status.allocatable
-                cpu = allocatable.get('cpu')
+                cpu = allocatable.get('cpu', '0')
                 gpu = allocatable.get('nvidia.com/gpu', '0')
-                memory = allocatable.get('memory')
+                memory = allocatable.get('memory', '0')
 
+                # Handle CPU values that might end with 'm' (millicores)
                 if cpu.endswith('m'):
                     cpu_count = float(cpu.rstrip('m')) / 1000
                 else:
