@@ -55,7 +55,7 @@ with DAG(
         image='your-cpu-image:latest',  # Replace with your actual CPU image
         cmds=["python", "-c", "import time; time.sleep(10); print('CPU task completed')"],
         node_selector={'cpu': 'true'},  # Ensure this label exists on your nodes
-        resources=cpu_intensive_resources,  # Corrected parameter name
+        container_resources=cpu_intensive_resources,  # Corrected parameter name
         execution_timeout=timedelta(seconds=300),
     )
 
@@ -67,7 +67,7 @@ with DAG(
         image='your-gpu-image:latest',  # Replace with your actual GPU image
         cmds=["python", "-c", "import time; time.sleep(5); print('GPU task 1 completed')"],
         node_selector={'gpu': 'true'},  # Ensure this label exists on your nodes
-        resources=gpu_resources,  # Corrected parameter name
+        container_resources=gpu_resources,  # Corrected parameter name
         execution_timeout=timedelta(seconds=300),
     )
 
@@ -79,7 +79,7 @@ with DAG(
         image='your-gpu-image:latest',  # Replace with your actual GPU image
         cmds=["python", "-c", "import time; time.sleep(5); print('GPU task 2 completed')"],
         node_selector={'gpu': 'true'},  # Ensure this label exists on your nodes
-        resources=gpu_resources,  # Corrected parameter name
+        container_resources=gpu_resources,  # Corrected parameter name
         execution_timeout=timedelta(seconds=300),
     )
 
