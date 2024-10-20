@@ -11,7 +11,8 @@ import os
 
 # Default arguments for the DAG
 default_args = {
-    'owner': 'кошкодевочка',  # Owner of the DAG
+    'owner': 'кошкодевочка',
+    'name' : 'hourly-report',  # Owner of the DAG
     'start_date': datetime(2024, 11, 9),
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
