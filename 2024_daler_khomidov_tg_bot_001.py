@@ -121,7 +121,7 @@ def send_hourly_report():
 default_args = {
     'owner': 'кошкодевочка',            # Имя владельца DAG
     'depends_on_past': False,
-    'retries': 2,
+    'retries': 0,
     'retry_delay': timedelta(minutes=5),
 }
 
