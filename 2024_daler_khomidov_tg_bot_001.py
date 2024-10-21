@@ -17,20 +17,14 @@ def send_airflow_alive_message():
     utc_now = datetime.now()
     utc_plus_3 = utc_now + timedelta(hours=3)
     formatted_time = utc_plus_3.strftime("%Y-%m-%d %H:%M:%S")
-    message = f"🐱 *Airflow жив!* 🐱\nОтчетное время (UTC+3): {formatted_time}"
-    return message
+    message = f"🐱 *Airflow жив!* 🐱\nОтчетное время (UTC+3): {formatted_time}\n"
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     payload = {
         "chat_id": chat_id,
         "text": message,
         "parse_mode": "Markdown"
     }
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = {
-        "chat_id": chat_id,
-        "text": message,
-        "parse_mode": "Markdown"
-    }
+
     message_thread_id = 15206 #Variable.get('telegram_message_thread_id', default_var=None)
     if message_thread_id:
         payload["message_thread_id"] = message_thread_id
