@@ -15,8 +15,8 @@ default_args = {
 # Функция для отправки сообщения в Telegram
 def send_airflow_alive_message():
     # Получение переменных Airflow
-    bot_token = Variable.get('telegram_bot_token')
-    chat_id = Variable.get('telegram_chat_id')
+    bot_token = "8128045612:AAENaeVPYa9YHCzJfk07aYCSmOLMEplaqAM" #Variable.get('telegram_bot_token')
+    chat_id = "-1002095886585" #Variable.get('telegram_chat_id')
 
     # Формирование сообщения
     message = "🐱 *Airflow жив!* 🐱"
@@ -39,7 +39,7 @@ def send_airflow_alive_message():
         "text": message,
         "parse_mode": "Markdown"
     }
-    message_thread_id = Variable.get('telegram_message_thread_id', default_var=None)
+    message_thread_id = 15206#Variable.get('telegram_message_thread_id', default_var=None)
 
     # Добавление message_thread_id, если он задан
     if message_thread_id:
@@ -63,7 +63,6 @@ def send_airflow_alive_message():
         print(f"Ошибка запроса: {err}")
         raise
 
-# Определение DAG
 with DAG(
     dag_id='simple_airflow_alive_report',
     default_args=default_args,
