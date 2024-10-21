@@ -8,7 +8,7 @@ import requests
 default_args = {
     'owner': 'кошкодевочка',
     'start_date': datetime(2024, 7, 19, 22, 40),  # Установите желаемую дату и время начала
-    'retries': 0,
+    'retries': 2,
     'retry_delay': timedelta(minutes=5),
 }
 
@@ -67,7 +67,7 @@ with DAG(
     dag_id='simple_airflow_alive_report',
     default_args=default_args,
     description='Простой DAG для отправки сообщения "Airflow жив" в Telegram',
-    schedule_interval=timedelta(minutes=1),  # Запуск раз в час
+    schedule_interval=timedelta(hours=1),  # Запуск раз в час
     catchup=False,
     tags=['simple', 'telegram', 'health-check'],
 ) as dag:
