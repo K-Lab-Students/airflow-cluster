@@ -9,7 +9,7 @@ import math
 from kubernetes.client import models as k8s  # Import Kubernetes models
 
 default_args = {
-    'start_date': days_ago(1),  # Updated start_date
+    'start_date': days_ago(1),  # Updated start_date for immediate scheduling
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
     'owner': 'catgirl'
@@ -29,7 +29,7 @@ with DAG(dag_id='multi_node_cluster_test_actual',
          default_args=default_args, 
          schedule_interval=None, 
          catchup=False,
-         tags = ["alive test", "node:cpu", "node:gpu"]) as dag:
+         tags=["alive test", "node:cpu", "node:gpu"]) as dag:
 
     # Define resource requirements
     cpu_intensive_resources = k8s.V1ResourceRequirements(
@@ -54,10 +54,10 @@ with DAG(dag_id='multi_node_cluster_test_actual',
         name='cpu-intensive-task',
         namespace='default',
         image='your-cpu-image:latest',
-        cmds=["python"],  # Corrected cmds
-        arguments=["-c", "import time; time.sleep(10); print('CPU task completed')"],  # Added arguments
+        cmds=["python"],  # Command to execute
+        arguments=["-c", "import time; time.sleep(10); print('CPU task completed')"],  # Script to run
         node_selector={'cpu': 'true'},
-        resources=cpu_intensive_resources,  # Corrected parameter
+        container_resources=cpu_intensive_resources,  # Use container_resources
         execution_timeout=timedelta(seconds=300),
     )
 
@@ -66,10 +66,10 @@ with DAG(dag_id='multi_node_cluster_test_actual',
         name='gpu-task-1',
         namespace='default',
         image='your-gpu-image:latest',
-        cmds=["python"],  # Corrected cmds
-        arguments=["-c", "import time; time.sleep(5); print('GPU task 1 completed')"],  # Added arguments
+        cmds=["python"],
+        arguments=["-c", "import time; time.sleep(5); print('GPU task 1 completed')"],
         node_selector={'gpu': 'true'},
-        resources=gpu_resources,  # Corrected parameter
+        container_resources=gpu_resources,  # Use container_resources
         execution_timeout=timedelta(seconds=300),
     )
 
@@ -78,10 +78,10 @@ with DAG(dag_id='multi_node_cluster_test_actual',
         name='gpu-task-2',
         namespace='default',
         image='your-gpu-image:latest',
-        cmds=["python"],  # Corrected cmds
-        arguments=["-c", "import time; time.sleep(5); print('GPU task 2 completed')"],  # Added arguments
+        cmds=["python"],
+        arguments=["-c", "import time; time.sleep(5); print('GPU task 2 completed')"],
         node_selector={'gpu': 'true'},
-        resources=gpu_resources,  # Corrected parameter
+        container_resources=gpu_resources,  # Use container_resources
         execution_timeout=timedelta(seconds=300),
     )
 
