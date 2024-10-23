@@ -1,6 +1,7 @@
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from airflow.operators.python import PythonOperator
+from airflow.utils.dates import days_ago
 from datetime import datetime, timedelta
 import random
 import math
@@ -8,7 +9,7 @@ import math
 from kubernetes.client import models as k8s  # Import Kubernetes models
 
 default_args = {
-    'start_date': datetime(2024, 11, 9),
+    'start_date': days_ago(1),  # Updated start_date
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
     'owner': 'catgirl'
@@ -53,9 +54,10 @@ with DAG(dag_id='multi_node_cluster_test_actual',
         name='cpu-intensive-task',
         namespace='default',
         image='your-cpu-image:latest',
-        cmds=["python", "-c", "import time; time.sleep(10); print('CPU task completed')"],
+        cmds=["python"],  # Corrected cmds
+        arguments=["-c", "import time; time.sleep(10); print('CPU task completed')"],  # Added arguments
         node_selector={'cpu': 'true'},
-        container_resources=cpu_intensive_resources,  # Use container_resources
+        resources=cpu_intensive_resources,  # Corrected parameter
         execution_timeout=timedelta(seconds=300),
     )
 
@@ -64,9 +66,10 @@ with DAG(dag_id='multi_node_cluster_test_actual',
         name='gpu-task-1',
         namespace='default',
         image='your-gpu-image:latest',
-        cmds=["python", "-c", "import time; time.sleep(5); print('GPU task 1 completed')"],
+        cmds=["python"],  # Corrected cmds
+        arguments=["-c", "import time; time.sleep(5); print('GPU task 1 completed')"],  # Added arguments
         node_selector={'gpu': 'true'},
-        container_resources=gpu_resources,  # Use container_resources
+        resources=gpu_resources,  # Corrected parameter
         execution_timeout=timedelta(seconds=300),
     )
 
@@ -75,9 +78,10 @@ with DAG(dag_id='multi_node_cluster_test_actual',
         name='gpu-task-2',
         namespace='default',
         image='your-gpu-image:latest',
-        cmds=["python", "-c", "import time; time.sleep(5); print('GPU task 2 completed')"],
+        cmds=["python"],  # Corrected cmds
+        arguments=["-c", "import time; time.sleep(5); print('GPU task 2 completed')"],  # Added arguments
         node_selector={'gpu': 'true'},
-        container_resources=gpu_resources,  # Use container_resources
+        resources=gpu_resources,  # Corrected parameter
         execution_timeout=timedelta(seconds=300),
     )
 
@@ -85,7 +89,7 @@ with DAG(dag_id='multi_node_cluster_test_actual',
         task_id='cpu_check_task',
         python_callable=cpu_check,
     )
-
+    
     gpu_check_task = PythonOperator(
         task_id='gpu_check_task',
         python_callable=gpu_check,
