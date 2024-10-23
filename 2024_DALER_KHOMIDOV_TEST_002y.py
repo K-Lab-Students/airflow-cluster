@@ -11,6 +11,7 @@ default_args = {
     'start_date': datetime(2024, 11, 9),
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
+    'owner': 'catgirl'
 }
 
 def cpu_check():
@@ -23,11 +24,11 @@ def gpu_check():
     result = sum([random.random() for _ in range(1000000)])
     print(f"GPU check result: {result}")
 
-with DAG('multi_node_cluster_test_actual', 
+with DAG(dag_id='multi_node_cluster_test_actual', 
          default_args=default_args, 
          schedule_interval=None, 
          catchup=False,
-         tags = ["example", "node:cpu", "node:gpu"]) as dag:
+         tags = ["alive test", "node:cpu", "node:gpu"]) as dag:
 
     # Define resource requirements
     cpu_intensive_resources = k8s.V1ResourceRequirements(
